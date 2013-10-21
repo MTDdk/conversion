@@ -74,17 +74,17 @@ public class Base64Test {
 	
 	@Test
 	public void correctEncoding() {
-		assertEquals("YW55IGNhcm5hbCBwbGVhc3Vy", Base64.encode("any carnal pleasu"));
+		assertEquals("YW55IGNhcm5hbCBwbGVhc3Vy", Base64.encode("any carnal pleasur"));
 	}
 	
-	/*@Test
+	@Test
 	public void correctEncodingBytes() {
-		assertEquals("YW55IGNhcm5hbCBwbGVhc3Vy", Base64.encode("any carnal pleasu".getBytes()));
+		assertEquals("YW55IGNhcm5hbCBwbGVhc3Vy", Base64.encode("any carnal pleasur".getBytes()));
 	}
 	
 	@Test
 	public void correctEncodingBytesWithDelimiters() {
-		assertEquals("YXN1cmUu", Base64.encode("pleasure".getBytes(), 2, "asure".length()));
+		assertEquals("YXN1", Base64.encode("pleasure.".getBytes(), 3, "asu".length()));
 	}
 	
 	@Test
@@ -95,6 +95,80 @@ public class Base64Test {
 	@Test
 	public void correctPadding2() {
 		assertEquals("ZWFzdXJlLg==", Base64.encode("easure."));
-	}*/
+	}
+	
+	@Test
+	public void giganticText() {
+		String txt =  "Man is distinguished, not only by his reason, but by this singular passion from other animals, which is a lust of the mind, that by a perseverance of delight in the continued and indefatigable generation of knowledge, exceeds the short vehemence of any carnal pleasure.";
+		String result = "TWFuIGlzIGRpc3Rpbmd1aXNoZWQsIG5vdCBvbmx5IGJ5IGhpcyByZWFzb24sIGJ1dCBieSB0aGlzIHNpbmd1bGFyIHBhc3Npb24gZnJvbSBvdGhlciBhbmltYWxzLCB3aGljaCBpcyBhIGx1c3Qgb2YgdGhlIG1pbmQsIHRoYXQgYnkgYSBwZXJzZXZlcmFuY2Ugb2YgZGVsaWdodCBpbiB0aGUgY29udGludWVkIGFuZCBpbmRlZmF0aWdhYmxlIGdlbmVyYXRpb24gb2Yga25vd2xlZGdlLCBleGNlZWRzIHRoZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4=";
+		assertEquals(result, Base64.encode(txt));
+	}
+	
+	@Test
+	public void timingEncode() {
+		long time = System.currentTimeMillis();
+		String txt =  "Man is distinguished, not only by his reason, but by this singular passion from other animals, which is a lust of the mind, that by a perseverance of delight in the continued and indefatigable generation of knowledge, exceeds the short vehemence of any carnal pleasure.";
+		for (int i = 0; i < 10000; i++)
+			Base64.encode(txt);
+		System.out.println(System.currentTimeMillis() - time);
+	}
+	
+	
+	@Test
+	public void assertDecodeCharset() {
+		assertEquals(0, Base64.decodeSet['A']);
+		assertEquals(19, Base64.decodeSet['T']);
+		assertEquals(22, Base64.decodeSet['W']);
+		assertEquals(42, Base64.decodeSet['q']);
+		assertEquals(55, Base64.decodeSet['3']);
+		assertEquals(62, Base64.decodeSet['+']);
+	}
+	
+	/*
+	 * decode 4 bytes at a time into three decoded
+	 */
+	@Test
+	public void firstByteDecoded() {
+		assertEquals((byte)'M', Base64.decodeSixPlusTwo(Base64.decodeSet['T'], Base64.decodeSet['W']));
+		assertEquals((byte)'a', Base64.decodeSixPlusTwo(Base64.decodeSet['Y'], Base64.decodeSet['W']));
+	}
+	
+	@Test
+	public void secondByteDecoded() {
+		assertEquals((byte)'a', Base64.decodeLastFourPlusFour(Base64.decodeSet['W'], Base64.decodeSet['F']));
+		assertEquals((byte)'n', Base64.decodeLastFourPlusFour(Base64.decodeSet['W'], Base64.decodeSet['5']));
+	}
+	
+	@Test
+	public void thirdByteDecoded() {
+		assertEquals((byte)'n', Base64.decodeLastTwoPlusSix(Base64.decodeSet['F'], Base64.decodeSet['u']));
+		assertEquals((byte)'y', Base64.decodeLastTwoPlusSix(Base64.decodeSet['5'], Base64.decodeSet['5']));
+	}
+	/*
+	 * decoding the individual bytes complete
+	 */
+	
+	@Test
+	public void ensureDecodedLength() {
+		assertEquals(3, Base64.calculateLengthOfDecoding("YXN1".getBytes(), 0, 4));
+		assertEquals(3, Base64.calculateLengthOfDecoding("TWFu".getBytes(), 0, 4));
+		assertEquals(18, Base64.calculateLengthOfDecoding("YW55IGNhcm5hbCBwbGVhc3Vy".getBytes(), 0, 24));
+		assertEquals(7, Base64.calculateLengthOfDecoding("ZWFzdXJlLg==".getBytes(), 0, 12));
+		assertEquals(20, Base64.calculateLengthOfDecoding("YW55IGNhcm5hbCBwbGVhc3VyZS4=".getBytes(), 0, 28));
+	}
+	
+	@Test
+	public void correctDecoding() {
+		assertArrayEquals("any carnal pleasur".getBytes(), Base64.decode("YW55IGNhcm5hbCBwbGVhc3Vy"));
+		assertArrayEquals("any carnal pleasu".getBytes(), Base64.decode("YW55IGNhcm5hbCBwbGVhc3U="));
+		assertArrayEquals("any carnal pleas".getBytes(), Base64.decode("YW55IGNhcm5hbCBwbGVhcw=="));
+	}
+	
+	
+	@Test
+	public void encodeDecode() {
+		byte[] txt = "kagemandenfraOtterupfalderaltidpaahalen".getBytes();
+		assertArrayEquals(txt, Base64.decode(Base64.encode(txt)));
+	}
 
 }
