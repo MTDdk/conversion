@@ -5,6 +5,7 @@ public class Base64 {
 	static final byte[] charSet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".getBytes();
 	static final byte[] decodeSet = new byte[256];//unsigned byte max
 	static final byte paddingChar = (byte) '=';
+	static final byte lineLength = 76;
 	static {
 		for(byte i = 0; i < 64; i++)
 			decodeSet[ charSet[i] ] = i;
@@ -28,8 +29,8 @@ public class Base64 {
 	 * @return
 	 */
 	public static final String encode(final byte[] bytes, final int start, final int length) {
-		final byte[] encoded = new byte[ calculateLengthOfEncoding(length) ];
-		int index = 0, triplet = 0;
+		final byte[] encoded = new byte[ calculateLengthOfEncodingIncludingLinereturn(length) ];
+		int index = 0, triplet = 0, line = 0;
 		byte remaining = 0x00;
 		
 		for (int i = start; i < start + length; i++) {
@@ -46,6 +47,13 @@ public class Base64 {
 				encoded[index++] = charSet[ plusTwo(remaining, bytes[i]) ];
 				encoded[index++] = charSet[ lastSix(bytes[i]) ];
 				triplet = 0;
+				
+				//add linebreak
+				if (++line == lineLength/4) {
+					encoded[index++] = (byte)'\n';
+					line = 0;
+				}
+				
 				break;
 			}
 		}
@@ -211,9 +219,16 @@ public class Base64 {
 	static final int calculateLengthOfEncoding(int length) {
 		return (length + 2) / 3 * 4;
 	}
+	static final int calculateLengthOfEncodingIncludingLinereturn(int length) {
+		int encoded = calculateLengthOfEncoding(length);
+		return encoded + encoded / lineLength;
+	}
 	
 	static final int calculateLengthOfDecoding(final byte[] bytes, final int start, final int length) {
 		return decodedLength(bytes, length, numberOfPaddingChars(bytes, start, length));
+	}
+	static final int calculateLengthOfDecodingIncludingLinereturn(final byte[] bytes, final int start, final int length) {
+		return decodedLength(bytes, length, numberOfPaddingChars(bytes, start, length)) + length / lineLength;
 	}
 	private static final int numberOfPaddingChars(final byte[] bytes, final int start, final int length) {
 		int endings = 0;

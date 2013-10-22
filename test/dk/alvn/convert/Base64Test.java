@@ -73,6 +73,11 @@ public class Base64Test {
 	}
 	
 	@Test
+	public void ensureEncodedLengthIncludingLinereturn() {
+		assertEquals(364, Base64.calculateLengthOfEncodingIncludingLinereturn(269));
+	}
+	
+	@Test
 	public void correctEncoding() {
 		assertEquals("YW55IGNhcm5hbCBwbGVhc3Vy", Base64.encode("any carnal pleasur"));
 	}
@@ -100,7 +105,11 @@ public class Base64Test {
 	@Test
 	public void giganticText() {
 		String txt =  "Man is distinguished, not only by his reason, but by this singular passion from other animals, which is a lust of the mind, that by a perseverance of delight in the continued and indefatigable generation of knowledge, exceeds the short vehemence of any carnal pleasure.";
-		String result = "TWFuIGlzIGRpc3Rpbmd1aXNoZWQsIG5vdCBvbmx5IGJ5IGhpcyByZWFzb24sIGJ1dCBieSB0aGlzIHNpbmd1bGFyIHBhc3Npb24gZnJvbSBvdGhlciBhbmltYWxzLCB3aGljaCBpcyBhIGx1c3Qgb2YgdGhlIG1pbmQsIHRoYXQgYnkgYSBwZXJzZXZlcmFuY2Ugb2YgZGVsaWdodCBpbiB0aGUgY29udGludWVkIGFuZCBpbmRlZmF0aWdhYmxlIGdlbmVyYXRpb24gb2Yga25vd2xlZGdlLCBleGNlZWRzIHRoZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4=";
+		String result = "TWFuIGlzIGRpc3Rpbmd1aXNoZWQsIG5vdCBvbmx5IGJ5IGhpcyByZWFzb24sIGJ1dCBieSB0aGlz\n"
+				+ "IHNpbmd1bGFyIHBhc3Npb24gZnJvbSBvdGhlciBhbmltYWxzLCB3aGljaCBpcyBhIGx1c3Qgb2Yg\n"
+				+ "dGhlIG1pbmQsIHRoYXQgYnkgYSBwZXJzZXZlcmFuY2Ugb2YgZGVsaWdodCBpbiB0aGUgY29udGlu\n"
+				+ "dWVkIGFuZCBpbmRlZmF0aWdhYmxlIGdlbmVyYXRpb24gb2Yga25vd2xlZGdlLCBleGNlZWRzIHRo\n"
+				+ "ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4=";
 		assertEquals(result, Base64.encode(txt));
 	}
 	
@@ -169,6 +178,11 @@ public class Base64Test {
 	public void encodeDecode() {
 		byte[] txt = "kagemandenfraOtterupfalderaltidpaahalen".getBytes();
 		assertArrayEquals(txt, Base64.decode(Base64.encode(txt)));
+	}
+	
+	@Test
+	public void writeout() {
+		System.out.println(Base64.encode("kagemanden \n fra Otterup..."));
 	}
 
 }
