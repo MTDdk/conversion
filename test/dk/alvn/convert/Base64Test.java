@@ -117,9 +117,9 @@ public class Base64Test {
 	public void timingEncode() {
 		long time = System.currentTimeMillis();
 		String txt =  "Man is distinguished, not only by his reason, but by this singular passion from other animals, which is a lust of the mind, that by a perseverance of delight in the continued and indefatigable generation of knowledge, exceeds the short vehemence of any carnal pleasure.";
-		for (int i = 0; i < 10000; i++)
+		for (int i = 0; i < 50107; i++)
 			Base64.encode(txt);
-		System.out.println(System.currentTimeMillis() - time);
+		System.out.println("encoding: " + (System.currentTimeMillis() - time));
 	}
 	
 	
@@ -167,16 +167,43 @@ public class Base64Test {
 	}
 	
 	@Test
+	public void ensureDecodedLengthconsideringLinereturn() {
+		String txt = "TWFuIGlzIGRpc3Rpbmd1aXNoZWQsIG5vdCBvbmx5IGJ5IGhpcyByZWFzb24sIGJ1dCBieSB0aGlz\n"
+				+ "IHNpbmd1bGFyIHBhc3Npb24gZnJvbSBvdGhlciBhbmltYWxzLCB3aGljaCBpcyBhIGx1c3Qgb2Yg\n"
+				+ "dGhlIG1pbmQsIHRoYXQgYnkgYSBwZXJzZXZlcmFuY2Ugb2YgZGVsaWdodCBpbiB0aGUgY29udGlu\n"
+				+ "dWVkIGFuZCBpbmRlZmF0aWdhYmxlIGdlbmVyYXRpb24gb2Yga25vd2xlZGdlLCBleGNlZWRzIHRo\n"
+				+ "ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4=";
+		byte[] input = txt.getBytes();
+		assertEquals(269, Base64.calculateLengthOfDecodingWithoutLinereturn(input, 0, input.length));
+	}
+	
+	@Test
 	public void correctDecoding() {
 		assertArrayEquals("any carnal pleasur".getBytes(), Base64.decode("YW55IGNhcm5hbCBwbGVhc3Vy"));
 		assertArrayEquals("any carnal pleasu".getBytes(), Base64.decode("YW55IGNhcm5hbCBwbGVhc3U="));
 		assertArrayEquals("any carnal pleas".getBytes(), Base64.decode("YW55IGNhcm5hbCBwbGVhcw=="));
 	}
 	
+	@Test
+	public void timingDecode() {
+		long time = System.currentTimeMillis();
+		String txt = "TWFuIGlzIGRpc3Rpbmd1aXNoZWQsIG5vdCBvbmx5IGJ5IGhpcyByZWFzb24sIGJ1dCBieSB0aGlz\n"
+				+ "IHNpbmd1bGFyIHBhc3Npb24gZnJvbSBvdGhlciBhbmltYWxzLCB3aGljaCBpcyBhIGx1c3Qgb2Yg\n"
+				+ "dGhlIG1pbmQsIHRoYXQgYnkgYSBwZXJzZXZlcmFuY2Ugb2YgZGVsaWdodCBpbiB0aGUgY29udGlu\n"
+				+ "dWVkIGFuZCBpbmRlZmF0aWdhYmxlIGdlbmVyYXRpb24gb2Yga25vd2xlZGdlLCBleGNlZWRzIHRo\n"
+				+ "ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4=";
+		for (int i = 0; i < 50107; i++)
+			Base64.decode(txt);
+		System.out.println("decoding: " + (System.currentTimeMillis() - time));
+	}
+	
 	
 	@Test
 	public void encodeDecode() {
 		byte[] txt = "kagemandenfraOtterupfalderaltidpaahalen".getBytes();
+		assertArrayEquals(txt, Base64.decode(Base64.encode(txt)));
+		
+		txt = "Man is distinguished, not only by his reason, but by this singular passion from other animals, which is a lust of the mind, that by a perseverance of delight in the continued and indefatigable generation of knowledge, exceeds the short vehemence of any carnal pleasure.".getBytes();
 		assertArrayEquals(txt, Base64.decode(Base64.encode(txt)));
 	}
 	

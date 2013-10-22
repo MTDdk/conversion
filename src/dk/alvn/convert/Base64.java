@@ -5,11 +5,14 @@ public class Base64 {
 	static final byte[] charSet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".getBytes();
 	static final byte[] decodeSet = new byte[256];//unsigned byte max
 	static final byte paddingChar = (byte) '=';
-	static final byte lineLength = 76;
+	static final byte linebreakChar = (byte) '\n';
+	static final byte lineLength = 76;//must be a multiple of 4
 	static {
 		for(byte i = 0; i < 64; i++)
 			decodeSet[ charSet[i] ] = i;
+		decodeSet[ paddingChar ] = paddingChar;
 	}
+	private static final int maxlinelength = lineLength >> 2;
 
 
 	public static final String encode(String s) {
@@ -30,34 +33,31 @@ public class Base64 {
 	 */
 	public static final String encode(final byte[] bytes, final int start, final int length) {
 		final byte[] encoded = new byte[ calculateLengthOfEncodingIncludingLinereturn(length) ];
-		int index = 0, triplet = 0, line = 0;
-		byte remaining = 0x00;
+		int index = 0, line = 0;
+		byte remaining = 0x00, triplet = 1;
 		
 		for (int i = start; i < start + length; i++) {
-			switch(triplet++) {
-			case 0:
+			switch(triplet <<= 1) {
+			case 2:
 				encoded[index++] = charSet[ firstSix(bytes[i]) ];
 				remaining = lastTwo(bytes[i]);
 				break;
-			case 1:
+			case 4:
 				encoded[index++] = charSet[ plusFour(remaining, bytes[i]) ];
 				remaining = lastFour(bytes[i]);
 				break;
-			case 2:
+			case 8:
 				encoded[index++] = charSet[ plusTwo(remaining, bytes[i]) ];
 				encoded[index++] = charSet[ lastSix(bytes[i]) ];
-				triplet = 0;
+				triplet = 1;
 				
 				//add linebreak
-				if (++line == lineLength/4) {
-					encoded[index++] = (byte)'\n';
-					line = 0;
-				}
+				if (++line == maxlinelength) { encoded[index++] = linebreakChar; line = 0; }
 				
 				break;
 			}
 		}
-		if (triplet > 0)
+		if (triplet > 1)
 			encoded[index++] = charSet[ remaining ];
 		while (index < encoded.length)
 			encoded[index++] = '=';
@@ -73,32 +73,33 @@ public class Base64 {
 		return decode(bytes, 0, bytes.length);
 	}
 	
+	/**
+	 * Handles both types of encoded input: with or without wrapped lines
+	 * @param bytes
+	 * @param start
+	 * @param length
+	 * @return
+	 */
 	public static final byte[] decode(final byte[] bytes, final int start, final int length) {
-		final int padding = numberOfPaddingChars(bytes, start, length), end = start + length -1 - padding;
-		final byte[] decoded = new byte[ decodedLength(bytes, length, padding) ];
+		final int padding = numberOfPaddingChars(bytes, start, length), end = start + length;
+		final byte[] decoded = new byte[ decodedLengthExcludingLinereturn(length, padding) ];
 		
-		int index = 0, quadlet = 0;
-		byte output = 0x00;
+		int index = 0, line = 0;
+		byte b2, b3;
 		
-		for(int i = start; i <= end; i++) {
-			byte d  = decodeSet[bytes[i]];
-			switch(quadlet++) {
-			case 0:
-				output = encodedFirstByte( d );
+		for(int i = start; i < end; ) {
+			decoded[index++] = encodedFirstPlusTwo( encodedFirstByte( decodeSet[bytes[i++]] ), b2 = decodeSet[bytes[i++]]);
+			
+			if ((b3 = bytes[i++]) == paddingChar)
 				break;
-			case 1:
-				decoded[index++] = encodedFirstPlusTwo(output, d);
-				output = encodedLastFour(d);
+			decoded[index++] = encodedPlusFour(encodedLastFour(b2), b3 = decodeSet[b3]);
+			
+			if ((b2 = bytes[i++]) == paddingChar)
 				break;
-			case 2:
-				decoded[index++] = encodedPlusFour(output, d);
-				output = encodedLastTwo(d);
-				break;
-			case 3:
-				decoded[index++] = encodedPlusSix(output, d);
-				quadlet = 0;
-				break;
-			}
+			decoded[index++] = encodedPlusSix(encodedLastTwo(b3), decodeSet[b2]);
+			
+			//remove linebreak
+			if (++line == maxlinelength && bytes[i] == linebreakChar) { i++; line = 0; }
 		}
 		
 		return decoded;
@@ -225,18 +226,23 @@ public class Base64 {
 	}
 	
 	static final int calculateLengthOfDecoding(final byte[] bytes, final int start, final int length) {
-		return decodedLength(bytes, length, numberOfPaddingChars(bytes, start, length));
+		return decodedLength(length, numberOfPaddingChars(bytes, start, length));
 	}
-	static final int calculateLengthOfDecodingIncludingLinereturn(final byte[] bytes, final int start, final int length) {
-		return decodedLength(bytes, length, numberOfPaddingChars(bytes, start, length)) + length / lineLength;
+	static final int calculateLengthOfDecodingWithoutLinereturn(final byte[] bytes, final int start, final int length) {
+		return decodedLengthExcludingLinereturn(length, numberOfPaddingChars(bytes, start, length));
 	}
 	private static final int numberOfPaddingChars(final byte[] bytes, final int start, final int length) {
 		int endings = 0;
 		while (bytes[length + start - 1 - endings] == paddingChar) endings++;
 		return endings;
 	}
-	private static final int decodedLength(final byte[] bytes, final int length, final int padding) {
+	private static final int decodedLength(final int length, final int padding) {
 		return length / 4 * 3 - padding;
 	}
+	private static final int decodedLengthExcludingLinereturn(final int length, final int padding) {
+		int l = decodedLength(length, padding);
+		return l - l / lineLength;
+	}
+		
 
 }
