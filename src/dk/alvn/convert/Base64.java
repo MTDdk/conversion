@@ -1,5 +1,9 @@
 package dk.alvn.convert;
 
+/**
+ * This class has been made with high testability in mind,
+ * though reasonably fast as well.
+ */
 public class Base64 {
 
 	static final byte[] charSet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".getBytes();
@@ -8,11 +12,12 @@ public class Base64 {
 	static final byte linebreakChar = (byte) '\n';
 	static final byte lineLength = 76;//must be a multiple of 4
 	static {
+        //populate the decodeSet for fast lookup as each index corresponds to a value
 		for(byte i = 0; i < 64; i++)
 			decodeSet[ charSet[i] ] = i;
 		decodeSet[ paddingChar ] = paddingChar;
 	}
-	private static final int maxlinelength = lineLength >> 2;
+	private static final int maxlinelength = lineLength >> 2;//this is why lineLength must be a multiple of 4
 
 
 	public static final String encode(String s) {
